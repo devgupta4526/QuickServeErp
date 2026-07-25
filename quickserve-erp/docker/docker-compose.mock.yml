@@ -1,0 +1,52 @@
+version: '3.9'
+
+# ============================================================
+# QuickServe ERP — Mock / Zero-dependency dev compose
+# Only needs Docker. No Kafka, MinIO, Elasticsearch, or
+# any API keys required. External services are stubbed.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.mock.yml up -d
+#   cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=mock
+#   cd frontend && npm run dev:mock
+# ============================================================
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: qs-mock-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: quickserve
+      POSTGRES_USER: quickserve
+      POSTGRES_PASSWORD: quickserve
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - mock_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quickserve"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: qs-mock-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: redis-server --appendonly no  # no persistence needed for dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mock_postgres:
+
+networks:
+  default:
+    name: qs-mock-network

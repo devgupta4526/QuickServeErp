@@ -1,0 +1,98 @@
+# application-mock.yml
+# Zero-dependency mock profile — runs with ONLY PostgreSQL + Redis.
+# No Kafka, no MinIO, no Elasticsearch, no Twilio, no WhatsApp, no Razorpay needed.
+# All external services are replaced with log-only stubs.
+#
+# Start with:  SPRING_PROFILES_ACTIVE=mock ./mvnw spring-boot:run
+
+spring:
+
+  # ===== Database — same defaults as dev, just override if needed =====
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/quickserve}
+    username: ${DB_USERNAME:quickserve}
+    password: ${DB_PASSWORD:quickserve}
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: none          # override base validate — Flyway owns schema in mock
+
+  # ===== Redis — required for OTP storage =====
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  # ===== Kafka — disabled, replaced by no-op stub =====
+  kafka:
+    bootstrap-servers: localhost:9092   # never actually connected in mock profile
+    producer:
+      properties:
+        max.block.ms: 1000              # fast-fail if somehow reached
+
+  # ===== Autoconfigure: disable Redis, Kafka, ES, Mail auto-config =====
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ReactiveElasticsearchRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
+
+  # ===== Mail — no-op in mock =====
+  mail:
+    host: localhost
+    port: 2525
+
+quickserve:
+  # ===== JWT — fixed dev secret =====
+  jwt:
+    secret: mock-profile-secret-key-minimum-256-bits-long-for-hmac-sha256-algorithm
+    access-token-expiry-ms: 86400000    # 24h so you don't keep logging in during dev
+    refresh-token-expiry-ms: 604800000  # 7 days
+
+  # ===== Mock flags =====
+  mock:
+    enabled: true
+    # When true, OTP verification always accepts code "123456"
+    otp-bypass-code: "123456"
+    # Auto-seed demo business + user on startup
+    seed-demo-data: true
+
+  # ===== External services — all disabled =====
+  minio:
+    endpoint: http://localhost:9000
+    access-key: mock
+    secret-key: mock
+    bucket-name: quickserve
+
+  whatsapp:
+    graph-api-url: http://localhost:0      # never reached in mock
+    webhook-verify-token: mock-token
+    encryption-key: mock-32-char-key-padded-to-32chars!
+
+  razorpay:
+    key-id: mock_key
+    key-secret: mock_secret
+    webhook-secret: mock_webhook_secret
+
+  twilio:
+    account-sid: mock_sid
+    auth-token: mock_token
+    from-number: "+10000000000"
+
+  app:
+    base-url: http://localhost:5173
+    trial-days: 14
+
+logging:
+  level:
+    com.quickserve: DEBUG
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.flywaydb: INFO

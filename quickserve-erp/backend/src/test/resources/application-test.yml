@@ -1,0 +1,27 @@
+spring:
+  jpa:
+    show-sql: false
+  flyway:
+    enabled: true
+    clean-on-validation-error: true
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers}
+    consumer:
+      group-id: quickserve-test
+      auto-offset-reset: earliest
+
+quickserve:
+  jwt:
+    secret: test-secret-key-minimum-256-bits-long-for-test-environment-use-only
+    access-token-expiry-ms: 300000
+    refresh-token-expiry-ms: 86400000
+  minio:
+    endpoint: http://localhost:9000
+  whatsapp:
+    encryption-key: test-32-char-encryption-key-1234
+    webhook-verify-token: test-webhook-token
+
+logging:
+  level:
+    com.quickserve: INFO
+    org.springframework.security: WARN

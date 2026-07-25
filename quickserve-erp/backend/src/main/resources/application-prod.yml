@@ -1,0 +1,24 @@
+spring:
+  jpa:
+    show-sql: false
+  flyway:
+    clean-disabled: true
+
+server:
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+
+logging:
+  level:
+    com.quickserve: INFO
+    org.springframework: WARN
+  pattern:
+    console: '{"timestamp":"%d{ISO8601}","level":"%level","logger":"%logger{36}","message":"%msg"}%n'
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus

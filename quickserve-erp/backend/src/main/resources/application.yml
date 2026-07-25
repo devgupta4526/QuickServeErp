@@ -1,0 +1,153 @@
+spring:
+  application:
+    name: quickserve-erp
+  profiles:
+    active: dev
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/quickserve}
+    username: ${DB_USERNAME:quickserve}
+    password: ${DB_PASSWORD:quickserve}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        default_schema: public
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+    consumer:
+      group-id: quickserve-erp
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      properties:
+        spring.json.trusted.packages: "com.quickserve.*"
+    listener:
+      ack-mode: MANUAL_IMMEDIATE
+
+  elasticsearch:
+    uris: ${ES_URI:http://localhost:9200}
+    username: ${ES_USERNAME:}
+    password: ${ES_PASSWORD:}
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 15MB
+
+  mail:
+    host: ${MAIL_HOST:smtp.resend.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:resend}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  compression:
+    enabled: true
+    mime-types: application/json,text/html,text/plain
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+# ===== QuickServe Custom Config =====
+quickserve:
+  jwt:
+    secret: ${JWT_SECRET:change-this-to-a-256-bit-random-secret-key-for-production-use}
+    access-token-expiry-ms: ${JWT_ACCESS_EXPIRY:900000}       # 15 minutes
+    refresh-token-expiry-ms: ${JWT_REFRESH_EXPIRY:2592000000} # 30 days
+
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin}
+    bucket-name: ${MINIO_BUCKET:quickserve}
+
+  whatsapp:
+    graph-api-url: https://graph.facebook.com/v18.0
+    webhook-verify-token: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN:quickserve-webhook-token}
+    encryption-key: ${WHATSAPP_ENCRYPTION_KEY:change-this-32-char-encryption-key}
+
+  razorpay:
+    key-id: ${RAZORPAY_KEY_ID:}
+    key-secret: ${RAZORPAY_KEY_SECRET:}
+    webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
+
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    from-number: ${TWILIO_FROM_NUMBER:}
+
+  gst:
+    irp-api-url: ${GST_IRP_URL:https://einvoice1.gst.gov.in}
+    username: ${GST_IRP_USERNAME:}
+    password: ${GST_IRP_PASSWORD:}
+
+  app:
+    base-url: ${APP_BASE_URL:http://localhost:5173}
+    trial-days: 14
+    max-otp-resends-per-hour: 3
+    max-login-attempts-per-minute: 5

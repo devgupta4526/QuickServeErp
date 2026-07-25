@@ -1,0 +1,52 @@
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# VS Code
+.vscode/
+
+# NetBeans
+nbproject/private/
+build/
+dist/
+
+# Logs
+*.log
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Environment Variables
+.env
+.env.*
+
+# Maven Wrapper
+.mvn/timing.properties
+
+# Spring Boot
+spring.log
+
+# Temporary Files
+*.tmp
+*.swp
