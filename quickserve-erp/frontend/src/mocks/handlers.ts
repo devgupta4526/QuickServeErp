@@ -209,6 +209,17 @@ export const handlers = [
 
   // ── ORDERS ────────────────────────────────────────────────────────────────
 
+  // GET /api/menu/tax-slabs
+  http.get('/api/menu/tax-slabs', async () => {
+    await delay(100)
+    return ok([
+      { id: 'slab-1', name: 'GST 5%',  percentage: 5,  sacCode: '996331' },
+      { id: 'slab-2', name: 'GST 12%', percentage: 12, sacCode: '996332' },
+      { id: 'slab-3', name: 'GST 18%', percentage: 18, sacCode: '996333' },
+      { id: 'slab-4', name: 'EXEMPT',  percentage: 0,  sacCode: '000000' },
+    ])
+  }),
+
   // GET /api/orders
   http.get('/api/orders', async ({ request }) => {
     await delay(200)
@@ -272,9 +283,34 @@ export const handlers = [
     return ok({ id: uid(), orderId: params.id, amount: body.amount, method: body.method, status: 'SUCCESS', paidAt: new Date().toISOString() }, 201)
   }),
 
+  // POST /api/orders/:id/cancel
+  http.post('/api/orders/:id/cancel', async ({ params, request }) => {
+    await delay(200)
+    const body = await request.json() as any
+    orders = orders.map(o => o.id === params.id ? { ...o, status: 'CANCELLED', updatedAt: new Date().toISOString() } : o)
+    return ok({ id: params.id, status: 'CANCELLED', reason: body.reason })
+  }),
+
+  // GET /api/orders/:id/invoice
+  http.get('/api/orders/:id/invoice', async ({ params }) => {
+    await delay(300)
+    // Return a simple text blob simulating PDF in mock mode
+    const order = orders.find(o => o.id === params.id)
+    return new Response(JSON.stringify({ invoice: order?.orderNumber, message: 'PDF generation requires backend' }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }),
+
   // ── KDS ────────────────────────────────────────────────────────────────────
 
-  // GET /api/kds/active
+  // GET /api/kds/display/:outletId  ← This is what KdsPage actually polls
+  http.get('/api/kds/display/:outletId', async () => {
+    await delay(200)
+    const active = orders.filter(o => ['PLACED', 'PREPARING'].includes(o.status))
+    return ok(active)
+  }),
+
+  // GET /api/kds/active (legacy fallback)
   http.get('/api/kds/active', async () => {
     await delay(200)
     const active = orders.filter(o => ['PLACED', 'PREPARING'].includes(o.status))
@@ -320,6 +356,17 @@ export const handlers = [
     return paged(customers)
   }),
 
+  // GET /api/crm/customers/search?q=
+  http.get('/api/crm/customers/search', async ({ request }) => {
+    await delay(150)
+    const url = new URL(request.url)
+    const q = url.searchParams.get('q')?.toLowerCase() ?? ''
+    const results = customers.filter(c =>
+      c.name?.toLowerCase().includes(q) || c.phone?.includes(q)
+    )
+    return ok(results)
+  }),
+
   // POST /api/crm/customers
   http.post('/api/crm/customers', async ({ request }) => {
     await delay(300)
@@ -343,6 +390,25 @@ export const handlers = [
     const { points } = await request.json() as any
     customers = customers.map(c => c.id === params.id ? { ...c, loyaltyPoints: c.loyaltyPoints + points } : c)
     return ok({ newBalance: customers.find(c => c.id === params.id)?.loyaltyPoints })
+  }),
+
+  // POST /api/crm/loyalty/earn (alternate path used by CrmPage)
+  http.post('/api/crm/loyalty/earn', async ({ request }) => {
+    await delay(200)
+    const { customerId, amount } = await request.json() as any
+    const pts = Math.floor(amount / 10) || 50
+    customers = customers.map(c => c.id === customerId ? { ...c, loyaltyPoints: c.loyaltyPoints + pts } : c)
+    return ok({ customerId, pointsEarned: pts, newBalance: customers.find(c => c.id === customerId)?.loyaltyPoints })
+  }),
+
+  // POST /api/crm/loyalty/redeem
+  http.post('/api/crm/loyalty/redeem', async ({ request }) => {
+    await delay(200)
+    const { customerId, points } = await request.json() as any
+    customers = customers.map(c =>
+      c.id === customerId ? { ...c, loyaltyPoints: Math.max(0, c.loyaltyPoints - points) } : c
+    )
+    return ok({ customerId, pointsRedeemed: points, newBalance: customers.find(c => c.id === customerId)?.loyaltyPoints })
   }),
 
   // ── HR ────────────────────────────────────────────────────────────────────
@@ -374,6 +440,37 @@ export const handlers = [
     await delay(200)
     const { employeeId } = await request.json() as any
     return ok({ employeeId, checkedOut: true, time: new Date().toISOString() })
+  }),
+
+  // POST /api/hr/payroll/process
+  http.post('/api/hr/payroll/process', async ({ request }) => {
+    await delay(800)
+    const url = new URL(request.url)
+    const month = url.searchParams.get('month') ?? new Date().getMonth() + 1
+    const year = url.searchParams.get('year') ?? new Date().getFullYear()
+    return ok({ period: `${year}-${String(month).padStart(2, '0')}`, totalPayroll: employees.reduce((s: number, e: any) => s + (e.salary || 18000), 0), status: 'PROCESSED' }, 201)
+  }),
+
+  // GET /api/hr/leaves
+  http.get('/api/hr/leaves', async () => {
+    await delay(200)
+    return ok([
+      { id: uid(), employeeId: '1', employeeName: 'Arjun Cashier', type: 'SICK', from: '2026-07-20', to: '2026-07-21', status: 'APPROVED', reason: 'Fever' },
+      { id: uid(), employeeId: '2', employeeName: 'Ravi Kitchen', type: 'CASUAL', from: '2026-07-28', to: '2026-07-28', status: 'PENDING', reason: 'Family function' },
+    ])
+  }),
+
+  // POST /api/hr/leaves/apply
+  http.post('/api/hr/leaves/apply', async ({ request }) => {
+    await delay(300)
+    const body = await request.json() as any
+    return ok({ id: uid(), ...body, status: 'PENDING' }, 201)
+  }),
+
+  // PATCH /api/hr/leaves/:id/approve
+  http.patch('/api/hr/leaves/:id/approve', async ({ params }) => {
+    await delay(200)
+    return ok({ id: params.id, status: 'APPROVED' })
   }),
 
   // ── INVENTORY ─────────────────────────────────────────────────────────────

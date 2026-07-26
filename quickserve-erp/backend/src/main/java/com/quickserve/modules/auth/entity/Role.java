@@ -21,7 +21,7 @@ public class Role extends BaseEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "permissions", columnDefinition = "TEXT[]")
+    @Column(name = "permissions")
     private String[] permissions;
 
     @Column(name = "is_system", nullable = false)

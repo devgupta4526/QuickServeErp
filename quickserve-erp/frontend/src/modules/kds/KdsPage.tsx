@@ -43,20 +43,30 @@ export default function KdsPage() {
     enabled: !!outletId,
   })
 
-  // WebSocket connection for real-time updates
+  // WebSocket connection for real-time updates (with error safety for mock mode)
   useEffect(() => {
     if (!outletId) return
-    const client = new StompClient({
-      webSocketFactory: () => new SockJS('/ws'),
-      onConnect: () => {
-        client.subscribe(`/topic/kds/${outletId}`, () => {
-          queryClient.invalidateQueries({ queryKey: ['kds', outletId] })
-        })
-      },
-    })
-    client.activate()
-    stompRef.current = client
-    return () => { client.deactivate() }
+    let client: StompClient | null = null
+    try {
+      client = new StompClient({
+        webSocketFactory: () => new SockJS('/ws'),
+        reconnectDelay: 0,
+        onConnect: () => {
+          client?.subscribe(`/topic/kds/${outletId}`, () => {
+            queryClient.invalidateQueries({ queryKey: ['kds', outletId] })
+          })
+        },
+        onStompError: () => {},
+        onWebSocketError: () => {},
+      })
+      client.activate()
+      stompRef.current = client
+    } catch {
+      // Ignore websocket connection errors when mock mode is active
+    }
+    return () => {
+      try { client?.deactivate() } catch {}
+    }
   }, [outletId, queryClient])
 
   // Update item status mutation

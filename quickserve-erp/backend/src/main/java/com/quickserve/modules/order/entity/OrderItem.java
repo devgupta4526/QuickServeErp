@@ -33,7 +33,7 @@ public class OrderItem extends BaseEntity {
     @Column(name = "variant_name")
     private String variantName;
 
-    @Column(name = "addons", columnDefinition = "jsonb")
+    @Column(name = "addons")
     private String addons = "[]";
 
     @Column(name = "tax_amount", nullable = false)

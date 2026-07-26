@@ -1,36 +1,37 @@
 # application-mock.yml
-# Zero-dependency mock profile — runs with ONLY PostgreSQL + Redis.
-# No Kafka, no MinIO, no Elasticsearch, no Twilio, no WhatsApp, no Razorpay needed.
-# All external services are replaced with log-only stubs.
-#
-# Start with:  SPRING_PROFILES_ACTIVE=mock ./mvnw spring-boot:run
+# Zero-dependency mock profile — runs with H2 in-memory DB.
+# No PostgreSQL, no Redis, no Kafka, no MinIO, no Elasticsearch, no Twilio, no WhatsApp, no Razorpay needed.
 
 spring:
 
-  # ===== Database — same defaults as dev, just override if needed =====
+  # ===== Database — H2 in-memory mode compatible with PostgreSQL =====
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/quickserve}
-    username: ${DB_USERNAME:quickserve}
-    password: ${DB_PASSWORD:quickserve}
+    url: ${DB_URL:jdbc:h2:mem:quickserve;DB_CLOSE_DELAY=-1;MODE=PostgreSQL}
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
 
   jpa:
     show-sql: false
     hibernate:
-      ddl-auto: none          # override base validate — Flyway owns schema in mock
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
 
-  # ===== Redis — required for OTP storage =====
+  flyway:
+    enabled: false
+
+  # ===== Redis — disabled, replaced by InMemoryOtpStore =====
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      host: localhost
+      port: 6379
 
-  # ===== Kafka — disabled, replaced by no-op stub =====
+  # ===== Kafka — disabled, replaced by MockEventPublisher =====
   kafka:
-    bootstrap-servers: localhost:9092   # never actually connected in mock profile
+    bootstrap-servers: localhost:9092
     producer:
       properties:
-        max.block.ms: 1000              # fast-fail if somehow reached
+        max.block.ms: 1000
 
   # ===== Autoconfigure: disable Redis, Kafka, ES, Mail auto-config =====
   autoconfigure:
@@ -59,9 +60,7 @@ quickserve:
   # ===== Mock flags =====
   mock:
     enabled: true
-    # When true, OTP verification always accepts code "123456"
     otp-bypass-code: "123456"
-    # Auto-seed demo business + user on startup
     seed-demo-data: true
 
   # ===== External services — all disabled =====
@@ -92,7 +91,7 @@ quickserve:
 
 logging:
   level:
-    com.quickserve: DEBUG
+    com.quickserve: INFO
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
     org.flywaydb: INFO

@@ -90,11 +90,13 @@ export default function LoginPage() {
               )}
             </div>
 
-            <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-800">
+              <a
+                href="#"
+                onClick={(e) => { e.preventDefault(); toast.info('Password reset feature coming soon'); }}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
                 Forgot password?
-              </Link>
-            </div>
+              </a>
 
             <button
               type="submit"

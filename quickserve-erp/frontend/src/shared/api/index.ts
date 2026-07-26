@@ -116,10 +116,11 @@ export const kdsApi = {
 
 export const financeApi = {
   getInvoices:    (page = 0, size = 20) => api.get(`/finance/invoices?page=${page}&size=${size}`),
-  getGstr1:       (month: string) => api.get(`/finance/gst/gstr1?month=${month}`),
+  getGstr1:       (month: string) => api.get(`/finance/gstr1?month=${month}`),
   getGstr3b:      (month: string) => api.get(`/finance/gst/gstr3b?month=${month}`),
   getTrialBalance:(date: string) => api.get(`/finance/trial-balance?date=${date}`),
   getProfitLoss:  (from: string, to: string) => api.get(`/finance/profit-loss?from=${from}&to=${to}`),
+  getPLSummary:   (from: string, to: string) => api.get(`/finance/pl-summary?from=${from}&to=${to}`),
   getExpenses:    (page = 0) => api.get(`/finance/expenses?page=${page}`),
   createExpense:  (data: object) => api.post('/finance/expenses', data),
 }
