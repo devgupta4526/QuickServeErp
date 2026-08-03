@@ -1,25 +1,18 @@
-# QuickServe Backend Dockerfile
-FROM registry.redhat.io/ubi9/openjdk-21-runtime:latest
+FROM maven:3.9.11-eclipse-temurin-21-alpine AS builder
+WORKDIR /build
+COPY pom.xml ./
+RUN mvn -B -DskipTests dependency:go-offline
+COPY src ./src
+RUN mvn -B -DskipTests package
 
-# Create non-root user
-USER root
-RUN useradd -m -u 1001 quickserve
+FROM eclipse-temurin:21-jre-alpine
+RUN addgroup -S quickserve && adduser -S quickserve -G quickserve
 WORKDIR /app
+COPY --from=builder --chown=quickserve:quickserve /build/target/quickserve-erp-*.jar app.jar
+USER quickserve
 
-# Copy built JAR
-COPY target/quickserve-erp-*.jar app.jar
-
-# Set ownership
-RUN chown quickserve:quickserve app.jar
-
-# Switch to non-root user
-USER 1001
-
-# JVM settings for ARM64 / low-memory VPS
-ENV JAVA_OPTS="-Xms256m -Xmx1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+OptimizeStringConcat"
-
-# Virtual thread support (Java 21)
-ENV JAVA_TOOL_OPTIONS="--enable-preview"
+# Sized for a 512 MB free instance.
+ENV JAVA_OPTS="-Xms128m -Xmx384m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
 
 EXPOSE 8080
 

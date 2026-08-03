@@ -148,6 +148,7 @@ quickserve:
 
   app:
     base-url: ${APP_BASE_URL:http://localhost:5173}
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
     trial-days: 14
     max-otp-resends-per-hour: 3
     max-login-attempts-per-minute: 5

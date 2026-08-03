@@ -3,7 +3,7 @@ import { useAuthStore } from '@/shared/store/authStore'
 
 // Base API instance
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   withCredentials: true,        // Send HTTP-only cookie with every request
   timeout: 30_000,
   headers: { 'Content-Type': 'application/json' },
