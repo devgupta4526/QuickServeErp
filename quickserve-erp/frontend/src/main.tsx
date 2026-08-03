@@ -25,7 +25,7 @@ declare module '@tanstack/react-router' {
 }
 
 async function prepare() {
-  if (import.meta.env.VITE_MOCK === 'true') {
+  if (import.meta.env.VITE_MOCK === 'true' && !import.meta.env.VITE_API_BASE_URL) {
     const { worker } = await import('./mocks/browser')
     await worker.start({
       onUnhandledRequest: 'bypass',   // let non-API requests through
